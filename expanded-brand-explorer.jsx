@@ -1,7 +1,71 @@
-const { useState } = React;
+import React, { useState } from 'react';
 
 const ExpandedBrandExplorer = () => {
   const [selectedBrand, setSelectedBrand] = useState(0);
+  const [customColor, setCustomColor] = useState(null);
+  
+  // Generate hue variations based on selected color
+  const generateVariations = (hex) => {
+    // Convert hex to HSL
+    const hexToHSL = (hex) => {
+      let r = parseInt(hex.slice(1, 3), 16) / 255;
+      let g = parseInt(hex.slice(3, 5), 16) / 255;
+      let b = parseInt(hex.slice(5, 7), 16) / 255;
+      
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, l = (max + min) / 2;
+      
+      if (max === min) {
+        h = s = 0;
+      } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+          case g: h = ((b - r) / d + 2) / 6; break;
+          case b: h = ((r - g) / d + 4) / 6; break;
+        }
+      }
+      return { h: h * 360, s: s * 100, l: l * 100 };
+    };
+    
+    // Convert HSL to hex
+    const hslToHex = (h, s, l) => {
+      s /= 100;
+      l /= 100;
+      const a = s * Math.min(l, 1 - l);
+      const f = n => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+      };
+      return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+    };
+    
+    const base = hexToHSL(hex);
+    
+    return [
+      { name: 'Lighter +20%', hex: hslToHex(base.h, base.s, Math.min(base.l + 20, 90)), type: 'Lightness' },
+      { name: 'Lighter +10%', hex: hslToHex(base.h, base.s, Math.min(base.l + 10, 85)), type: 'Lightness' },
+      { name: 'Original', hex: hex, type: 'Lightness' },
+      { name: 'Darker -10%', hex: hslToHex(base.h, base.s, Math.max(base.l - 10, 15)), type: 'Lightness' },
+      { name: 'Darker -20%', hex: hslToHex(base.h, base.s, Math.max(base.l - 20, 10)), type: 'Lightness' },
+      
+      { name: 'Warmer +30°', hex: hslToHex((base.h + 30) % 360, base.s, base.l), type: 'Hue' },
+      { name: 'Warmer +15°', hex: hslToHex((base.h + 15) % 360, base.s, base.l), type: 'Hue' },
+      { name: 'Original', hex: hex, type: 'Hue' },
+      { name: 'Cooler -15°', hex: hslToHex((base.h - 15 + 360) % 360, base.s, base.l), type: 'Hue' },
+      { name: 'Cooler -30°', hex: hslToHex((base.h - 30 + 360) % 360, base.s, base.l), type: 'Hue' },
+      
+      { name: 'Vivid +20%', hex: hslToHex(base.h, Math.min(base.s + 20, 100), base.l), type: 'Saturation' },
+      { name: 'Vivid +10%', hex: hslToHex(base.h, Math.min(base.s + 10, 100), base.l), type: 'Saturation' },
+      { name: 'Original', hex: hex, type: 'Saturation' },
+      { name: 'Muted -10%', hex: hslToHex(base.h, Math.max(base.s - 10, 0), base.l), type: 'Saturation' },
+      { name: 'Muted -20%', hex: hslToHex(base.h, Math.max(base.s - 20, 0), base.l), type: 'Saturation' },
+    ];
+  };
+  
+  const variationTypes = ['Lightness', 'Hue', 'Saturation'];
 
   // Locked palette
   const palette = {
@@ -16,39 +80,36 @@ const ExpandedBrandExplorer = () => {
     white: '#FFFFFF',
   };
 
-  // Brand color options
+  // Brand color options - Standout colors
   const brandOptions = [
-    // Blues - Keeping selected
+    // Blues - Strong foundation
     { name: 'Royal Blue', hex: '#4F46E5', category: 'Blue', vibe: 'Premium, confident' },
     { name: 'Indigo', hex: '#6366F1', category: 'Blue', vibe: 'Modern, softer royal' },
     { name: 'Sapphire', hex: '#3730A3', category: 'Blue', vibe: 'Deep, luxurious' },
+    { name: 'Cobalt', hex: '#2563EB', category: 'Blue', vibe: 'Classic fintech, trustworthy' },
     
-    // Purple - Keeping selected
+    // Vibrant Purples - Bold & unique
     { name: 'Violet', hex: '#7C3AED', category: 'Purple', vibe: 'Vibrant, creative' },
+    { name: 'Electric Purple', hex: '#8B5CF6', category: 'Purple', vibe: 'Energetic, modern' },
+    { name: 'Deep Violet', hex: '#6D28D9', category: 'Purple', vibe: 'Rich, premium' },
+    { name: 'Amethyst', hex: '#9333EA', category: 'Purple', vibe: 'Bold, memorable' },
     
-    // New Blues
-    { name: 'Azure', hex: '#2563EB', category: 'Blue', vibe: 'Bright, trustworthy' },
-    { name: 'Midnight', hex: '#1E3A8A', category: 'Blue', vibe: 'Deep, serious, banking' },
-    { name: 'Cerulean', hex: '#0284C7', category: 'Blue', vibe: 'Fresh, sky-like, open' },
+    // Magentas & Pinks - Distinctive & warm
+    { name: 'Magenta', hex: '#DB2777', category: 'Pink', vibe: 'Bold, energetic' },
+    { name: 'Hot Pink', hex: '#EC4899', category: 'Pink', vibe: 'Vibrant, youthful' },
+    { name: 'Fuchsia', hex: '#D946EF', category: 'Pink', vibe: 'Playful, standout' },
+    { name: 'Rose', hex: '#E11D48', category: 'Pink', vibe: 'Warm, confident' },
     
-    // New Purples
-    { name: 'Iris', hex: '#5B21B6', category: 'Purple', vibe: 'Rich, regal, unique' },
-    { name: 'Wisteria', hex: '#8B5CF6', category: 'Purple', vibe: 'Lighter, approachable' },
-    { name: 'Byzantium', hex: '#702670', category: 'Purple', vibe: 'Deep magenta-purple, bold' },
-    
-    // Blue-Purples (transitional)
-    { name: 'Periwinkle', hex: '#6875F5', category: 'Blue-Purple', vibe: 'Soft, friendly, modern' },
-    { name: 'Slate Violet', hex: '#5850EC', category: 'Blue-Purple', vibe: 'Balanced, professional' },
-    { name: 'Electric Indigo', hex: '#5A4FCF', category: 'Blue-Purple', vibe: 'Energetic, tech-forward' },
-    
-    // Teals - Fresh alternatives
-    { name: 'Ocean', hex: '#0891B2', category: 'Teal', vibe: 'Fresh, calming, trustworthy' },
-    { name: 'Deep Teal', hex: '#0D9488', category: 'Teal', vibe: 'Grounded, mature' },
-    { name: 'Peacock', hex: '#0E7490', category: 'Teal', vibe: 'Bold, distinctive' },
+    // Teals & Greens - Fresh & different
+    { name: 'Teal', hex: '#0D9488', category: 'Teal', vibe: 'Fresh, balanced' },
+    { name: 'Emerald', hex: '#059669', category: 'Teal', vibe: 'Growth, prosperity' },
+    { name: 'Cyan', hex: '#0891B2', category: 'Teal', vibe: 'Bright, modern' },
+    { name: 'Turquoise', hex: '#14B8A6', category: 'Teal', vibe: 'Friendly, approachable' },
   ];
 
-  const brand = brandOptions[selectedBrand];
-  const categories = ['Blue', 'Purple', 'Blue-Purple', 'Teal'];
+  const baseBrand = brandOptions[selectedBrand];
+  const brand = customColor ? { ...baseBrand, hex: customColor.hex, name: customColor.name } : baseBrand;
+  const categories = ['Blue', 'Purple', 'Pink', 'Teal'];
 
   // Helper for lighter tint
   const tint = (hex, opacity) => `${hex}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`;
@@ -88,7 +149,10 @@ const ExpandedBrandExplorer = () => {
                 return (
                   <button
                     key={opt.hex}
-                    onClick={() => setSelectedBrand(globalIndex)}
+                    onClick={() => {
+                      setSelectedBrand(globalIndex);
+                      setCustomColor(null);
+                    }}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -118,6 +182,73 @@ const ExpandedBrandExplorer = () => {
             <div style={{ fontSize: 13, color: palette.slate }}>{brand.hex} • {brand.vibe}</div>
           </div>
         </div>
+      </div>
+
+      {/* Hue Variations of Selected Color */}
+      <div style={{ 
+        background: 'white', 
+        borderRadius: 16, 
+        padding: 20, 
+        marginBottom: 24, 
+        boxShadow: '0 1px 3px rgba(0,0,0,0.08)', 
+        border: `1px solid ${palette.border}` 
+      }}>
+        <h2 style={{ fontSize: 11, fontWeight: 600, color: palette.slate, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+          Variations of {baseBrand.name}
+        </h2>
+        <p style={{ fontSize: 12, color: palette.pewter, marginBottom: 16 }}>
+          Explore different hues, lightness, and saturation levels
+        </p>
+        
+        {variationTypes.map(type => {
+          const typeVariations = generateVariations(baseBrand.hex).filter(v => v.type === type);
+          return (
+            <div key={type} style={{ marginBottom: 16 }}>
+              <p style={{ fontSize: 10, color: palette.pewter, marginBottom: 8, fontWeight: 600 }}>{type}</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {typeVariations.map((variation, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      if (variation.name === 'Original') {
+                        setCustomColor(null);
+                      } else {
+                        setCustomColor({ hex: variation.hex, name: `${baseBrand.name} (${variation.name})` });
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '12px 8px',
+                      border: (variation.name === 'Original' && !customColor) || (customColor && customColor.hex === variation.hex) 
+                        ? `2px solid ${palette.charcoal}` 
+                        : `1px solid ${palette.border}`,
+                      borderRadius: 10,
+                      background: (variation.name === 'Original' && !customColor) || (customColor && customColor.hex === variation.hex)
+                        ? palette.iceBlue 
+                        : 'white',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ 
+                      width: '100%', 
+                      height: 40, 
+                      borderRadius: 6, 
+                      background: variation.hex,
+                      transition: 'background 0.2s ease'
+                    }} />
+                    <span style={{ fontSize: 10, color: palette.charcoal, textAlign: 'center' }}>{variation.name}</span>
+                    <span style={{ fontSize: 9, color: palette.pewter, fontFamily: 'monospace' }}>{variation.hex}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Complete Palette */}
@@ -2163,10 +2294,917 @@ const ExpandedBrandExplorer = () => {
             </div>
           </div>
 
+          {/* Profile Tab */}
+          <div style={{
+            width: 300,
+            minWidth: 300,
+            background: palette.charcoal,
+            borderRadius: 36,
+            padding: 8,
+            boxShadow: '0 25px 50px rgba(0,0,0,0.15)'
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: 28,
+              minHeight: 580,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}>
+              {/* Header */}
+              <div style={{ padding: '12px 16px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                  <h1 style={{ fontSize: 16, fontWeight: 600, color: palette.charcoal, margin: 0 }}>Profile</h1>
+                  <div style={{ position: 'absolute', right: 0 }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={palette.charcoal} strokeWidth="2">
+                      <circle cx="12" cy="12" r="3"/>
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Card */}
+              <div style={{ padding: '0 16px' }}>
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: 20, 
+                  background: palette.surface, 
+                  borderRadius: 16,
+                  marginBottom: 16
+                }}>
+                  <div style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: '50%',
+                    background: `linear-gradient(135deg, ${brand.hex}, ${palette.charcoal})`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: 24,
+                    fontWeight: 600,
+                    margin: '0 auto 12px',
+                    transition: 'background 0.2s ease'
+                  }}>
+                    JO
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 600, color: palette.charcoal, marginBottom: 4 }}>Jo Smith</div>
+                  <div style={{ fontSize: 13, color: palette.pewter, marginBottom: 12 }}>Member since Jan 2024</div>
+                  <div style={{ 
+                    display: 'inline-block',
+                    padding: '4px 12px', 
+                    background: `${brand.hex}15`, 
+                    color: brand.hex, 
+                    borderRadius: 20, 
+                    fontSize: 12, 
+                    fontWeight: 500,
+                    transition: 'all 0.2s ease'
+                  }}>
+                    Verified
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                  <div style={{ flex: 1, textAlign: 'center', padding: 12, background: palette.surface, borderRadius: 12 }}>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: palette.charcoal }}>$2,450</div>
+                    <div style={{ fontSize: 11, color: palette.pewter }}>Credit Limit</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'center', padding: 12, background: palette.surface, borderRadius: 12 }}>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: palette.charcoal }}>5</div>
+                    <div style={{ fontSize: 11, color: palette.pewter }}>Backers</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'center', padding: 12, background: palette.surface, borderRadius: 12 }}>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: palette.sageTeal }}>98%</div>
+                    <div style={{ fontSize: 11, color: palette.pewter }}>Trust Score</div>
+                  </div>
+                </div>
+
+                {/* Menu Items */}
+                <div style={{ background: palette.surface, borderRadius: 14, overflow: 'hidden' }}>
+                  {[
+                    { icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10', label: 'Personal Info' },
+                    { icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', label: 'Security' },
+                    { icon: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9', label: 'Notifications' },
+                    { icon: 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', label: 'Payment Methods' },
+                  ].map((item, i) => (
+                    <div key={i} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '14px 16px',
+                      borderBottom: i < 3 ? `1px solid ${palette.border}` : 'none'
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={palette.slate} strokeWidth="2">
+                        <path d={item.icon}/>
+                      </svg>
+                      <span style={{ flex: 1, fontSize: 14, color: palette.charcoal }}>{item.label}</span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={palette.pewter} strokeWidth="2">
+                        <path d="M9 18l6-6-6-6"/>
+                      </svg>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom Nav */}
+              <div style={{
+                background: 'white',
+                padding: '8px 16px 20px',
+                marginTop: 'auto',
+                display: 'flex',
+                justifyContent: 'space-around',
+                borderTop: `1px solid ${palette.border}`
+              }}>
+                {[
+                  { icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', active: false },
+                  { icon: 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', active: false },
+                  { icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2', active: false },
+                  { icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', active: true },
+                ].map((item, i) => (
+                  <div key={i} style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: item.active ? `${brand.hex}15` : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background 0.2s ease'
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={item.active ? brand.hex : palette.pewter} strokeWidth="2" style={{ transition: 'stroke 0.2s ease' }}>
+                      <path d={item.icon}/>
+                    </svg>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Dark Mode Mobile Pages */}
+      <div style={{ marginTop: 48 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 600, color: palette.charcoal, marginBottom: 8 }}>
+          Dark Mode
+        </h2>
+        <p style={{ fontSize: 14, color: palette.pewter, marginBottom: 24 }}>
+          How the app looks in dark mode
+        </p>
+
+        <div style={{ display: 'flex', gap: 24, overflowX: 'auto', paddingBottom: 24 }}>
+          
+          {/* Dark - Welcome */}
+          <div style={{
+            width: 300,
+            minWidth: 300,
+            background: '#000',
+            borderRadius: 36,
+            padding: 8,
+            boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
+          }}>
+            <div style={{
+              background: brand.hex,
+              borderRadius: 28,
+              minHeight: 580,
+              padding: 24,
+              display: 'flex',
+              flexDirection: 'column',
+              transition: 'background 0.2s ease'
+            }}>
+              {/* Status bar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 48 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>9:41</span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <div style={{ width: 16, height: 10, background: 'white', borderRadius: 2 }} />
+                </div>
+              </div>
+
+              {/* Content */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center' }}>
+                <div style={{
+                  width: 88,
+                  height: 88,
+                  borderRadius: 24,
+                  background: 'rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 24px'
+                }}>
+                  <svg width="44" height="44" viewBox="0 0 24 24" fill="white">
+                    <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                </div>
+                <h1 style={{ fontSize: 28, fontWeight: 700, color: 'white', margin: '0 0 12px' }}>
+                  Blink
+                </h1>
+                <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.8)', lineHeight: 1.5, margin: 0 }}>
+                  Instant credit, backed by the people who trust you most
+                </p>
+              </div>
+
+              {/* Bottom */}
+              <div>
+                <button style={{
+                  width: '100%',
+                  padding: '15px',
+                  background: 'white',
+                  color: brand.hex,
+                  border: 'none',
+                  borderRadius: 14,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  marginBottom: 10,
+                  transition: 'color 0.2s ease'
+                }}>
+                  Get Started
+                </button>
+                <button style={{
+                  width: '100%',
+                  padding: '15px',
+                  background: 'transparent',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 14,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  cursor: 'pointer'
+                }}>
+                  I already have an account
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Dark - Home Dashboard */}
+          <div style={{
+            width: 300,
+            minWidth: 300,
+            background: '#000',
+            borderRadius: 36,
+            padding: 8,
+            boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
+          }}>
+            <div style={{
+              background: '#0D0D0D',
+              borderRadius: 28,
+              minHeight: 580,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}>
+              {/* Header */}
+              <div style={{ background: '#1A1A1A', padding: '12px 16px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: '#888' }}>Welcome back</div>
+                    <div style={{ fontSize: 18, fontWeight: 600, color: '#FFF' }}>Jo</div>
+                  </div>
+                  <div style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: `linear-gradient(135deg, ${brand.hex}, #333)`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    transition: 'background 0.2s ease'
+                  }}>
+                    JO
+                  </div>
+                </div>
+
+                {/* Credit card mini */}
+                <div style={{
+                  background: `linear-gradient(135deg, ${brand.hex}, ${brand.hex}CC)`,
+                  borderRadius: 14,
+                  padding: 16,
+                  color: 'white',
+                  transition: 'background 0.2s ease'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 4 }}>Available</div>
+                      <div style={{ fontSize: 26, fontWeight: 600 }}>$2,450</div>
+                    </div>
+                    <div style={{
+                      padding: '4px 8px',
+                      background: 'rgba(255,255,255,0.2)',
+                      borderRadius: 6,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: 'white'
+                    }}>
+                      Active
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div style={{ background: '#1A1A1A', padding: '0 16px' }}>
+                <div style={{ display: 'flex', borderBottom: '1px solid #333' }}>
+                  {['Overview', 'Activity', 'Backers'].map((tab, i) => (
+                    <button key={i} style={{
+                      flex: 1,
+                      padding: '12px 0',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: i === 0 ? `2px solid ${brand.hex}` : '2px solid transparent',
+                      color: i === 0 ? brand.hex : '#666',
+                      fontSize: 13,
+                      fontWeight: i === 0 ? 600 : 400,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Content */}
+              <div style={{ flex: 1, padding: 14 }}>
+                <div style={{ background: '#1A1A1A', borderRadius: 14, padding: 14, marginBottom: 10 }}>
+                  <div style={{ fontSize: 12, color: '#888', marginBottom: 10 }}>Quick Actions</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button style={{
+                      flex: 1,
+                      padding: '12px 8px',
+                      background: brand.hex,
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 10,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'background 0.2s ease'
+                    }}>
+                      Request
+                    </button>
+                    <button style={{
+                      flex: 1,
+                      padding: '12px 8px',
+                      background: '#2A2A2A',
+                      color: '#FFF',
+                      border: 'none',
+                      borderRadius: 10,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      cursor: 'pointer'
+                    }}>
+                      Repay
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ background: '#1A1A1A', borderRadius: 14, padding: 14 }}>
+                  <div style={{ fontSize: 12, color: '#888', marginBottom: 10 }}>Recent</div>
+                  {[
+                    { name: 'Sarah backed you', amount: '+$200', positive: true },
+                    { name: 'Loan repaid', amount: '-$50', positive: false },
+                  ].map((item, i) => (
+                    <div key={i} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '10px 0',
+                      borderTop: i > 0 ? '1px solid #333' : 'none'
+                    }}>
+                      <span style={{ fontSize: 13, color: '#FFF' }}>{item.name}</span>
+                      <span style={{ 
+                        fontSize: 13, 
+                        fontWeight: 600, 
+                        color: item.positive ? palette.sageTeal : '#FFF' 
+                      }}>
+                        {item.amount}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom Nav */}
+              <div style={{
+                background: '#1A1A1A',
+                padding: '8px 16px 20px',
+                display: 'flex',
+                justifyContent: 'space-around'
+              }}>
+                {[
+                  { icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', active: true },
+                  { icon: 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', active: false },
+                  { icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2', active: false },
+                  { icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', active: false },
+                ].map((item, i) => (
+                  <div key={i} style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: item.active ? `${brand.hex}30` : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background 0.2s ease'
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={item.active ? brand.hex : '#666'} strokeWidth="2" style={{ transition: 'stroke 0.2s ease' }}>
+                      <path d={item.icon}/>
+                    </svg>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Dark - Network List */}
+          <div style={{
+            width: 300,
+            minWidth: 300,
+            background: '#000',
+            borderRadius: 36,
+            padding: 8,
+            boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
+          }}>
+            <div style={{
+              background: '#0D0D0D',
+              borderRadius: 28,
+              minHeight: 580,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}>
+              {/* Header */}
+              <div style={{ padding: '12px 16px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <h1 style={{ fontSize: 20, fontWeight: 600, color: '#FFF', margin: 0 }}>My Network</h1>
+                  <div style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: `${brand.hex}30`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background 0.2s ease'
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={brand.hex} strokeWidth="2" style={{ transition: 'stroke 0.2s ease' }}>
+                      <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Search */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px 12px',
+                  background: '#1A1A1A',
+                  borderRadius: 10
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                  <span style={{ fontSize: 14, color: '#666' }}>Search connections...</span>
+                </div>
+              </div>
+
+              {/* Filter chips */}
+              <div style={{ padding: '0 16px 12px', display: 'flex', gap: 8 }}>
+                <span style={{ 
+                  padding: '6px 12px', 
+                  background: brand.hex, 
+                  color: 'white', 
+                  borderRadius: 16, 
+                  fontSize: 12, 
+                  fontWeight: 500,
+                  transition: 'background 0.2s ease'
+                }}>
+                  All
+                </span>
+                <span style={{ padding: '6px 12px', background: '#1A1A1A', color: '#888', borderRadius: 16, fontSize: 12, fontWeight: 500 }}>
+                  Backers
+                </span>
+                <span style={{ padding: '6px 12px', background: '#1A1A1A', color: '#888', borderRadius: 16, fontSize: 12, fontWeight: 500 }}>
+                  Backing
+                </span>
+              </div>
+
+              {/* List */}
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {[
+                  { name: 'Sarah Mitchell', role: 'Backing you', amount: '$500', status: 'active' },
+                  { name: 'James Kim', role: 'Backing you', amount: '$400', status: 'active' },
+                  { name: 'Alex Rivera', role: 'You\'re backing', amount: '$300', status: 'active' },
+                  { name: 'Emma Chen', role: 'Pending request', amount: '$200', status: 'pending' },
+                  { name: 'Michael Park', role: 'Backing you', amount: '$150', status: 'active' },
+                ].map((person, i) => (
+                  <div key={i} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '10px 16px',
+                    borderBottom: '1px solid #222'
+                  }}>
+                    <div style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      background: person.status === 'pending' ? '#444' : i % 2 === 0 ? brand.hex : '#555',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      transition: 'background 0.2s ease'
+                    }}>
+                      {person.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#FFF' }}>{person.name}</div>
+                      <div style={{ fontSize: 12, color: '#888' }}>{person.role}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#FFF' }}>{person.amount}</div>
+                      {person.status === 'pending' && (
+                        <span style={{ 
+                          fontSize: 10, 
+                          color: palette.copper, 
+                          fontWeight: 500
+                        }}>
+                          Pending
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bottom Nav */}
+              <div style={{
+                background: '#1A1A1A',
+                padding: '8px 16px 20px',
+                display: 'flex',
+                justifyContent: 'space-around'
+              }}>
+                {[
+                  { icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', active: false },
+                  { icon: 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', active: false },
+                  { icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2', active: true },
+                  { icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', active: false },
+                ].map((item, i) => (
+                  <div key={i} style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: item.active ? `${brand.hex}30` : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background 0.2s ease'
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={item.active ? brand.hex : '#666'} strokeWidth="2" style={{ transition: 'stroke 0.2s ease' }}>
+                      <path d={item.icon}/>
+                    </svg>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Dark - Loan Form */}
+          <div style={{
+            width: 300,
+            minWidth: 300,
+            background: '#000',
+            borderRadius: 36,
+            padding: 8,
+            boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
+          }}>
+            <div style={{
+              background: '#0D0D0D',
+              borderRadius: 28,
+              minHeight: 580,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}>
+              {/* Header */}
+              <div style={{ padding: '12px 16px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: 0 }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2">
+                      <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                  </div>
+                  <h1 style={{ fontSize: 16, fontWeight: 600, color: '#FFF', margin: 0 }}>Loan</h1>
+                </div>
+              </div>
+
+              {/* Form */}
+              <div style={{ flex: 1, padding: '0 16px' }}>
+                {/* Amount Display */}
+                <div style={{ textAlign: 'center', marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Enter amount</div>
+                  <div style={{ 
+                    fontSize: 44, 
+                    fontWeight: 600, 
+                    color: '#FFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <span style={{ fontSize: 26, color: '#666', marginRight: 4 }}>$</span>
+                    500
+                  </div>
+                </div>
+
+                {/* Slider */}
+                <div style={{ marginBottom: 24, padding: '0 4px' }}>
+                  <div style={{
+                    position: 'relative',
+                    height: 5,
+                    background: '#333',
+                    borderRadius: 3
+                  }}>
+                    <div style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      width: '20%',
+                      height: '100%',
+                      background: brand.hex,
+                      borderRadius: 3,
+                      transition: 'background 0.2s ease'
+                    }} />
+                    <div style={{
+                      position: 'absolute',
+                      left: '20%',
+                      top: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: 20,
+                      height: 20,
+                      background: '#FFF',
+                      borderRadius: '50%',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                      border: `2px solid ${brand.hex}`,
+                      transition: 'border-color 0.2s ease'
+                    }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+                    <span style={{ fontSize: 11, color: '#666' }}>$100</span>
+                    <span style={{ fontSize: 11, color: '#666' }}>$2,450</span>
+                  </div>
+                </div>
+
+                {/* Duration */}
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: '#FFF', display: 'block', marginBottom: 8 }}>
+                    Repayment period
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {['1 mo', '3 mo', '6 mo'].map((period, i) => (
+                      <button key={i} style={{
+                        flex: 1,
+                        padding: '11px 0',
+                        background: i === 1 ? '#444' : '#1A1A1A',
+                        color: i === 1 ? '#FFF' : '#888',
+                        border: `1.5px solid ${i === 1 ? '#444' : '#333'}`,
+                        borderRadius: 10,
+                        fontSize: 13,
+                        fontWeight: 500,
+                        cursor: 'pointer'
+                      }}>
+                        {period}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Note */}
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: '#FFF', display: 'block', marginBottom: 8 }}>
+                    Note (optional)
+                  </label>
+                  <input 
+                    type="text" 
+                    placeholder="What's this for?"
+                    style={{
+                      width: '100%',
+                      padding: '11px 14px',
+                      border: '1.5px solid #333',
+                      borderRadius: 10,
+                      fontSize: 14,
+                      color: '#FFF',
+                      background: '#1A1A1A',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Summary */}
+                <div style={{
+                  padding: 14,
+                  background: '#1A1A1A',
+                  borderRadius: 12
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontSize: 13, color: '#888' }}>Monthly payment</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#FFF' }}>$171.67</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 13, color: '#888' }}>Total (5% interest)</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#FFF' }}>$515.00</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit - pinned to bottom */}
+              <div style={{ padding: '16px', marginTop: 'auto' }}>
+                <button style={{
+                  width: '100%',
+                  padding: '15px',
+                  background: brand.hex,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 14,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  transition: 'background 0.2s ease'
+                }}>
+                  Request $500
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Dark - Profile */}
+          <div style={{
+            width: 300,
+            minWidth: 300,
+            background: '#000',
+            borderRadius: 36,
+            padding: 8,
+            boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
+          }}>
+            <div style={{
+              background: '#0D0D0D',
+              borderRadius: 28,
+              minHeight: 580,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}>
+              {/* Header */}
+              <div style={{ padding: '12px 16px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                  <h1 style={{ fontSize: 16, fontWeight: 600, color: '#FFF', margin: 0 }}>Profile</h1>
+                  <div style={{ position: 'absolute', right: 0 }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2">
+                      <circle cx="12" cy="12" r="3"/>
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Card */}
+              <div style={{ padding: '0 16px' }}>
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: 20, 
+                  background: '#1A1A1A', 
+                  borderRadius: 16,
+                  marginBottom: 16
+                }}>
+                  <div style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: '50%',
+                    background: `linear-gradient(135deg, ${brand.hex}, #333)`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: 24,
+                    fontWeight: 600,
+                    margin: '0 auto 12px',
+                    transition: 'background 0.2s ease'
+                  }}>
+                    JO
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 600, color: '#FFF', marginBottom: 4 }}>Jo Smith</div>
+                  <div style={{ fontSize: 13, color: '#888', marginBottom: 12 }}>Member since Jan 2024</div>
+                  <div style={{ 
+                    display: 'inline-block',
+                    padding: '4px 12px', 
+                    background: `${brand.hex}30`, 
+                    color: brand.hex, 
+                    borderRadius: 20, 
+                    fontSize: 12, 
+                    fontWeight: 500,
+                    transition: 'all 0.2s ease'
+                  }}>
+                    Verified
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                  <div style={{ flex: 1, textAlign: 'center', padding: 12, background: '#1A1A1A', borderRadius: 12 }}>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: '#FFF' }}>$2,450</div>
+                    <div style={{ fontSize: 11, color: '#888' }}>Credit Limit</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'center', padding: 12, background: '#1A1A1A', borderRadius: 12 }}>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: '#FFF' }}>5</div>
+                    <div style={{ fontSize: 11, color: '#888' }}>Backers</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'center', padding: 12, background: '#1A1A1A', borderRadius: 12 }}>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: palette.sageTeal }}>98%</div>
+                    <div style={{ fontSize: 11, color: '#888' }}>Trust Score</div>
+                  </div>
+                </div>
+
+                {/* Menu Items */}
+                <div style={{ background: '#1A1A1A', borderRadius: 14, overflow: 'hidden' }}>
+                  {[
+                    { icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10', label: 'Personal Info' },
+                    { icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', label: 'Security' },
+                    { icon: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9', label: 'Notifications' },
+                    { icon: 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', label: 'Payment Methods' },
+                  ].map((item, i) => (
+                    <div key={i} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '14px 16px',
+                      borderBottom: i < 3 ? '1px solid #333' : 'none'
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2">
+                        <path d={item.icon}/>
+                      </svg>
+                      <span style={{ flex: 1, fontSize: 14, color: '#FFF' }}>{item.label}</span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                        <path d="M9 18l6-6-6-6"/>
+                      </svg>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom Nav */}
+              <div style={{
+                background: '#1A1A1A',
+                padding: '8px 16px 20px',
+                marginTop: 'auto',
+                display: 'flex',
+                justifyContent: 'space-around'
+              }}>
+                {[
+                  { icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', active: false },
+                  { icon: 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', active: false },
+                  { icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2', active: false },
+                  { icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', active: true },
+                ].map((item, i) => (
+                  <div key={i} style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: item.active ? `${brand.hex}30` : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background 0.2s ease'
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={item.active ? brand.hex : '#666'} strokeWidth="2" style={{ transition: 'stroke 0.2s ease' }}>
+                      <path d={item.icon}/>
+                    </svg>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
   );
 };
-
-export default ExpandedBrandExplorer;
