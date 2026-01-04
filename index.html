@@ -13,6 +13,20 @@
     body {
       font-family: system-ui, -apple-system, sans-serif;
     }
+    /* Subtle scrollbar for horizontal scroll areas */
+    ::-webkit-scrollbar {
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.15);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(0,0,0,0.25);
+    }
   </style>
 </head>
 <body>
@@ -25,11 +39,11 @@
   <!-- Babel for JSX transpilation -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Your component -->
-  <script type="text/babel" src="expanded-brand-explorer.jsx"></script>
+  <!-- Your component - with explicit preset to avoid module transforms -->
+  <script type="text/babel" data-presets="react" src="expanded-brand-explorer.jsx"></script>
 
   <!-- Mount the app -->
-  <script type="text/babel">
+  <script type="text/babel" data-presets="react">
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<ExpandedBrandExplorer />);
   </script>

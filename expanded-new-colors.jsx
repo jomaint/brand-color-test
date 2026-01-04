@@ -1,64 +1,9 @@
-const { useState, useEffect } = React;
+import React, { useState } from 'react';
 
 const ExpandedBrandExplorer = () => {
   const [selectedBrand, setSelectedBrand] = useState(0);
   const [customColor, setCustomColor] = useState(null);
-  const [copied, setCopied] = useState(false);
-
-  // Read URL params on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const colorIndex = params.get('color');
-    const customHex = params.get('hex');
-    const customName = params.get('name');
-
-    if (colorIndex !== null) {
-      const index = parseInt(colorIndex, 10);
-      if (!isNaN(index) && index >= 0) {
-        setSelectedBrand(index);
-      }
-    }
-
-    if (customHex) {
-      setCustomColor({ hex: customHex, name: customName || 'Custom' });
-    }
-  }, []);
-
-  // Update URL when selection changes
-  const updateURL = (colorIndex, custom = null) => {
-    const params = new URLSearchParams();
-    params.set('color', colorIndex.toString());
-
-    if (custom) {
-      params.set('hex', custom.hex);
-      params.set('name', custom.name);
-    }
-
-    const newURL = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState({}, '', newURL);
-  };
-
-  // Handle color selection
-  const handleColorSelect = (index) => {
-    setSelectedBrand(index);
-    setCustomColor(null);
-    updateURL(index);
-  };
-
-  // Handle custom variation selection
-  const handleCustomSelect = (variation, baseIndex) => {
-    setCustomColor({ hex: variation.hex, name: variation.name });
-    updateURL(baseIndex, { hex: variation.hex, name: variation.name });
-  };
-
-  // Copy share link
-  const copyShareLink = () => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
+  
   // Generate hue variations based on selected color
   const generateVariations = (hex) => {
     // Convert hex to HSL
@@ -160,7 +105,7 @@ const ExpandedBrandExplorer = () => {
     { name: 'Emerald', hex: '#059669', category: 'Teal', vibe: 'Growth, prosperity' },
     { name: 'Cyan', hex: '#0891B2', category: 'Teal', vibe: 'Bright, modern' },
     { name: 'Turquoise', hex: '#14B8A6', category: 'Teal', vibe: 'Friendly, approachable' },
-
+    
     // Deep & Professional - Muted, sophisticated
     { name: 'Deep Plum', hex: '#61195C', category: 'Deep', vibe: 'Sophisticated, luxe' },
     { name: 'Burgundy', hex: '#7B1E3F', category: 'Deep', vibe: 'Classic, refined' },
@@ -216,7 +161,10 @@ const ExpandedBrandExplorer = () => {
                 return (
                   <button
                     key={opt.hex}
-                    onClick={() => handleColorSelect(globalIndex)}
+                    onClick={() => {
+                      setSelectedBrand(globalIndex);
+                      setCustomColor(null);
+                    }}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -241,39 +189,10 @@ const ExpandedBrandExplorer = () => {
         {/* Selected color info */}
         <div style={{ marginTop: 16, padding: 16, background: palette.iceBlue, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ width: 56, height: 56, borderRadius: 12, background: brand.hex, transition: 'background 0.2s ease' }} />
-          <div style={{ flex: 1 }}>
+          <div>
             <div style={{ fontSize: 18, fontWeight: 600, color: palette.charcoal }}>{brand.name}</div>
             <div style={{ fontSize: 13, color: palette.slate }}>{brand.hex} • {brand.vibe}</div>
           </div>
-          <button
-            onClick={copyShareLink}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '10px 16px',
-              background: copied ? palette.sageTeal : brand.hex,
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              {copied ? (
-                <path d="M20 6L9 17l-5-5"/>
-              ) : (
-                <>
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                </>
-              )}
-            </svg>
-            {copied ? 'Copied!' : 'Copy Link'}
-          </button>
         </div>
       </div>
 
@@ -303,9 +222,9 @@ const ExpandedBrandExplorer = () => {
                     key={i}
                     onClick={() => {
                       if (variation.name === 'Original') {
-                        handleColorSelect(selectedBrand);
+                        setCustomColor(null);
                       } else {
-                        handleCustomSelect({ hex: variation.hex, name: `${baseBrand.name} (${variation.name})` }, selectedBrand);
+                        setCustomColor({ hex: variation.hex, name: `${baseBrand.name} (${variation.name})` });
                       }
                     }}
                     style={{
@@ -345,10 +264,7 @@ const ExpandedBrandExplorer = () => {
       </div>
 
       {/* Preview Section - Light Background */}
-      <div style={{ background: palette.surface }}>
-
-      {/* Padded Content Wrapper */}
-      <div style={{ padding: '32px 32px 0' }}>
+      <div style={{ background: palette.surface, padding: 32 }}>
 
       {/* Complete Palette */}
       <div style={{ 
@@ -1460,37 +1376,21 @@ const ExpandedBrandExplorer = () => {
         </div>
       </div>
 
-      </div>{/* End Padded Content Wrapper */}
+      {/* Mobile Pages Section */}
+      <div style={{ marginTop: 48, padding: '0 24px' }}>
+        <h2 style={{ fontSize: 28, fontWeight: 700, color: palette.charcoal, marginBottom: 8 }}>
+          Mobile App Pages
+        </h2>
+        <p style={{ fontSize: 15, color: palette.pewter, marginBottom: 24 }}>
+          Full page mockups showing how the brand color flows through the app
+        </p>
 
-      {/* Mobile Pages Section - Full Width */}
-      <div style={{ marginTop: 48, paddingBottom: 48 }}>
-        <div style={{ padding: '0 32px' }}>
-          <h2 style={{ fontSize: 28, fontWeight: 700, color: palette.charcoal, marginBottom: 8 }}>
-            Mobile App Pages
-          </h2>
-          <p style={{ fontSize: 15, color: palette.pewter, marginBottom: 24 }}>
-            Full page mockups showing how the brand color flows through the app
-          </p>
-        </div>
-
-        <div style={{
-          display: 'flex',
-          gap: 24,
-          overflowX: 'auto',
-          paddingTop: 8,
-          paddingBottom: 24,
-          paddingLeft: 32,
-          paddingRight: 32,
-          scrollSnapType: 'x mandatory',
-          scrollPaddingLeft: 32,
-          WebkitOverflowScrolling: 'touch'
-        }}>
-
+        <div style={{ display: 'flex', gap: 24, overflowX: 'auto', paddingTop: 8 }}>
+          
           {/* Onboarding Page 1 - Welcome */}
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: palette.charcoal,
             borderRadius: 36,
             padding: 8,
@@ -1577,7 +1477,6 @@ const ExpandedBrandExplorer = () => {
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: palette.charcoal,
             borderRadius: 36,
             padding: 8,
@@ -1682,7 +1581,6 @@ const ExpandedBrandExplorer = () => {
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: palette.charcoal,
             borderRadius: 36,
             padding: 8,
@@ -1805,7 +1703,6 @@ const ExpandedBrandExplorer = () => {
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: palette.charcoal,
             borderRadius: 36,
             padding: 8,
@@ -1990,7 +1887,6 @@ const ExpandedBrandExplorer = () => {
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: palette.charcoal,
             borderRadius: 36,
             padding: 8,
@@ -2152,7 +2048,6 @@ const ExpandedBrandExplorer = () => {
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: palette.charcoal,
             borderRadius: 36,
             padding: 8,
@@ -2330,7 +2225,6 @@ const ExpandedBrandExplorer = () => {
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: palette.charcoal,
             borderRadius: 36,
             padding: 8,
@@ -2441,7 +2335,6 @@ const ExpandedBrandExplorer = () => {
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: palette.charcoal,
             borderRadius: 36,
             padding: 8,
@@ -2592,34 +2485,20 @@ const ExpandedBrandExplorer = () => {
       </div>
 
       {/* Dark Mode Mobile Pages */}
-      <div style={{ marginTop: 48 }}>
-        <div style={{ padding: '0 32px' }}>
-          <h2 style={{ fontSize: 28, fontWeight: 700, color: palette.charcoal, marginBottom: 8 }}>
-            Dark Mode
-          </h2>
-          <p style={{ fontSize: 15, color: palette.pewter, marginBottom: 24 }}>
-            How the app looks in dark mode
-          </p>
-        </div>
+      <div style={{ marginTop: 48, padding: '0 24px' }}>
+        <h2 style={{ fontSize: 28, fontWeight: 700, color: palette.charcoal, marginBottom: 8 }}>
+          Dark Mode
+        </h2>
+        <p style={{ fontSize: 15, color: palette.pewter, marginBottom: 24 }}>
+          How the app looks in dark mode
+        </p>
 
-        <div style={{
-          display: 'flex',
-          gap: 24,
-          overflowX: 'auto',
-          paddingTop: 8,
-          paddingBottom: 24,
-          paddingLeft: 32,
-          paddingRight: 32,
-          scrollSnapType: 'x mandatory',
-          scrollPaddingLeft: 32,
-          WebkitOverflowScrolling: 'touch'
-        }}>
-
+        <div style={{ display: 'flex', gap: 24, overflowX: 'auto', paddingTop: 8 }}>
+          
           {/* Dark - Welcome */}
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: '#1E2328',
             borderRadius: 36,
             padding: 8,
@@ -2702,235 +2581,10 @@ const ExpandedBrandExplorer = () => {
             </div>
           </div>
 
-          {/* Dark - Value Prop */}
-          <div style={{
-            width: 300,
-            minWidth: 300,
-            scrollSnapAlign: 'start',
-            background: '#1E2328',
-            borderRadius: 36,
-            padding: 8,
-            boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
-          }}>
-            <div style={{
-              background: '#262D34',
-              borderRadius: 28,
-              height: 580,
-              padding: 24,
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              {/* Status bar */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#FFF' }}>9:41</span>
-                <span style={{ fontSize: 14, color: '#9CA3AF', cursor: 'pointer' }}>Skip</span>
-              </div>
-
-              {/* Illustration area */}
-              <div style={{
-                flex: 1,
-                background: '#323A42',
-                borderRadius: 20,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 24
-              }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                    {['S', 'J', 'A'].map((letter, i) => (
-                      <div key={i} style={{
-                        width: 52,
-                        height: 52,
-                        borderRadius: '50%',
-                        background: i === 0 ? brand.hex : i === 1 ? '#64748b' : '#6B7280',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 20,
-                        fontWeight: 600,
-                        marginLeft: i > 0 ? -12 : 0,
-                        border: '3px solid #262D34',
-                        transition: 'background 0.2s ease'
-                      }}>
-                        {letter}
-                      </div>
-                    ))}
-                  </div>
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5">
-                    <path d="M12 5v14M5 12h14"/>
-                  </svg>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <h2 style={{ fontSize: 22, fontWeight: 600, color: '#FFF', margin: '0 0 10px' }}>
-                  Build your circle
-                </h2>
-                <p style={{ fontSize: 14, color: '#9CA3AF', lineHeight: 1.5, margin: 0 }}>
-                  Friends and family back your credit. The more trust, the more you can borrow.
-                </p>
-              </div>
-
-              {/* Progress dots */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 16 }}>
-                {[0, 1, 2].map(i => (
-                  <div key={i} style={{
-                    width: i === 1 ? 24 : 8,
-                    height: 8,
-                    borderRadius: 4,
-                    background: i === 1 ? brand.hex : '#444',
-                    transition: 'background 0.2s ease'
-                  }} />
-                ))}
-              </div>
-
-              {/* Button */}
-              <button style={{
-                width: '100%',
-                padding: '15px',
-                background: brand.hex,
-                color: 'white',
-                border: 'none',
-                borderRadius: 14,
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'background 0.2s ease'
-              }}>
-                Continue
-              </button>
-            </div>
-          </div>
-
-          {/* Dark - Permissions */}
-          <div style={{
-            width: 300,
-            minWidth: 300,
-            scrollSnapAlign: 'start',
-            background: '#1E2328',
-            borderRadius: 36,
-            padding: 8,
-            boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
-          }}>
-            <div style={{
-              background: '#262D34',
-              borderRadius: 28,
-              height: 580,
-              padding: 24,
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              {/* Status bar */}
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', marginBottom: 24 }}>
-                <div style={{ position: 'absolute', left: 0 }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2">
-                    <path d="M15 18l-6-6 6-6"/>
-                  </svg>
-                </div>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#FFF' }}>9:41</span>
-              </div>
-
-              {/* Content */}
-              <div style={{ flex: 1 }}>
-                <h2 style={{ fontSize: 22, fontWeight: 600, color: '#FFF', margin: '0 0 10px' }}>
-                  Enable notifications
-                </h2>
-                <p style={{ fontSize: 14, color: '#9CA3AF', lineHeight: 1.5, margin: '0 0 24px' }}>
-                  Stay updated on requests, payments, and when friends need your help.
-                </p>
-
-                {/* Permission cards */}
-                {[
-                  { icon: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9', title: 'Push notifications', desc: 'Real-time updates' },
-                  { icon: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6', title: 'Email alerts', desc: 'Weekly summaries' },
-                ].map((item, i) => (
-                  <div key={i} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: 14,
-                    background: '#323A42',
-                    borderRadius: 12,
-                    marginBottom: 10
-                  }}>
-                    <div style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                      background: `${brand.hex}25`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'background 0.2s ease'
-                    }}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={brand.hex} strokeWidth="1.5" style={{ transition: 'stroke 0.2s ease' }}>
-                        <path d={item.icon}/>
-                      </svg>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 500, color: '#FFF' }}>{item.title}</div>
-                      <div style={{ fontSize: 12, color: '#9CA3AF' }}>{item.desc}</div>
-                    </div>
-                    <div style={{
-                      width: 44,
-                      height: 26,
-                      borderRadius: 13,
-                      background: brand.hex,
-                      padding: 2,
-                      transition: 'background 0.2s ease'
-                    }}>
-                      <div style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        background: 'white',
-                        marginLeft: 18
-                      }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Buttons */}
-              <button style={{
-                width: '100%',
-                padding: '15px',
-                background: brand.hex,
-                color: 'white',
-                border: 'none',
-                borderRadius: 14,
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: 'pointer',
-                marginBottom: 10,
-                transition: 'background 0.2s ease'
-              }}>
-                Enable Notifications
-              </button>
-              <button style={{
-                width: '100%',
-                padding: '14px',
-                background: 'transparent',
-                color: '#9CA3AF',
-                border: 'none',
-                borderRadius: 14,
-                fontSize: 14,
-                fontWeight: 500,
-                cursor: 'pointer'
-              }}>
-                Maybe later
-              </button>
-            </div>
-          </div>
-
           {/* Dark - Home Dashboard */}
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: '#1E2328',
             borderRadius: 36,
             padding: 8,
@@ -3116,7 +2770,6 @@ const ExpandedBrandExplorer = () => {
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: '#1E2328',
             borderRadius: 36,
             padding: 8,
@@ -3277,7 +2930,6 @@ const ExpandedBrandExplorer = () => {
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: '#1E2328',
             borderRadius: 36,
             padding: 8,
@@ -3451,120 +3103,10 @@ const ExpandedBrandExplorer = () => {
             </div>
           </div>
 
-          {/* Dark - Success / Confirmation */}
-          <div style={{
-            width: 300,
-            minWidth: 300,
-            scrollSnapAlign: 'start',
-            background: '#1E2328',
-            borderRadius: 36,
-            padding: 8,
-            boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
-          }}>
-            <div style={{
-              background: '#262D34',
-              borderRadius: 28,
-              height: 580,
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              padding: 24
-            }}>
-              {/* Content centered */}
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center', flex: 1 }}>
-                {/* Success icon */}
-                <div style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: '50%',
-                  background: `${palette.sageTeal}25`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 20px'
-                }}>
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={palette.sageTeal} strokeWidth="2">
-                    <path d="M20 6L9 17l-5-5"/>
-                  </svg>
-                </div>
-
-                <h2 style={{ fontSize: 22, fontWeight: 600, color: '#FFF', margin: '0 0 10px' }}>
-                  Funds Sent!
-                </h2>
-                <p style={{ fontSize: 14, color: '#9CA3AF', margin: '0 0 24px', lineHeight: 1.5 }}>
-                  Your $500 has been sent to your account. Funds typically arrive within minutes.
-                </p>
-
-                {/* Details card */}
-                <div style={{
-                  background: '#323A42',
-                  borderRadius: 14,
-                  padding: 16,
-                  textAlign: 'left'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <span style={{ fontSize: 13, color: '#9CA3AF' }}>Amount</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#FFF' }}>$500.00</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <span style={{ fontSize: 13, color: '#9CA3AF' }}>Duration</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#FFF' }}>3 months</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 13, color: '#9CA3AF' }}>Status</span>
-                    <span style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: palette.sageTeal,
-                      background: `${palette.sageTeal}25`,
-                      padding: '3px 8px',
-                      borderRadius: 6
-                    }}>
-                      Sent
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Buttons - pinned to bottom */}
-              <div style={{ marginTop: 'auto' }}>
-                <button style={{
-                  width: '100%',
-                  padding: '15px',
-                  background: brand.hex,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 14,
-                  fontSize: 15,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  marginBottom: 10,
-                  transition: 'background 0.2s ease'
-                }}>
-                  Back to Home
-                </button>
-                <button style={{
-                  width: '100%',
-                  padding: '14px',
-                  background: 'transparent',
-                  color: '#9CA3AF',
-                  border: 'none',
-                  borderRadius: 14,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}>
-                  View Details
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Dark - Profile */}
           <div style={{
             width: 300,
             minWidth: 300,
-            scrollSnapAlign: 'start',
             background: '#1E2328',
             borderRadius: 36,
             padding: 8,
@@ -3716,3 +3258,5 @@ const ExpandedBrandExplorer = () => {
     </div>
   );
 };
+
+export default ExpandedBrandExplorer;
